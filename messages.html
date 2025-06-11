@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Panel de contrôle{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mt-4">Messages</h1>
+                <button type="button" class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                    <i class="bi bi-plus-circle"></i> Créer un ticket
+                </button>
+            </div>
+            
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Messages récents</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="refreshMessages">
+                            <i class="bi bi-arrow-clockwise"></i> Actualiser
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>Expéditeur</th>
+                                    <th>Message</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Messages statiques pour l'exemple -->
+                                <tr>
+                                    <td><i class="bi bi-envelope text-primary"></i></td>
+                                    <td>Utilisateur#1234</td>
+                                    <td>Bonjour, j'ai une question concernant ma commande...</td>
+                                    <td>11/06/2025 14:22</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-chat"></i> Répondre
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="bi bi-envelope text-primary"></i></td>
+                                    <td>Client#5678</td>
+                                    <td>Besoin d'aide avec la configuration du bot...</td>
+                                    <td>10/06/2025 09:15</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-chat"></i> Répondre
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="bi bi-envelope text-primary"></i></td>
+                                    <td>Membre#9012</td>
+                                    <td>Je n'arrive pas à accéder à ma licence...</td>
+                                    <td>09/06/2025 16:45</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-chat"></i> Répondre
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            Affichage de <strong>1-3</strong> sur <strong>3</strong> messages
+                        </div>
+                        <nav aria-label="Pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">Suivant</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de création de ticket -->
+<div class="modal fade" id="createTicketModal" tabindex="-1" aria-labelledby="createTicketModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTicketModalLabel">Créer un nouveau ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form id="createTicketForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ticketSubject" class="form-label">Sujet</label>
+                        <input type="text" class="form-control" id="ticketSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticketMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="ticketMessage" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticketPriority" class="form-label">Priorité</label>
+                        <select class="form-select" id="ticketPriority" required>
+                            <option value="low">Basse</option>
+                            <option value="medium" selected>Moyenne</option>
+                            <option value="high">Haute</option>
+                            <option value="urgent">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Créer le ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Gestion du formulaire de création de ticket
+document.getElementById('createTicketForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Récupérer les données du formulaire
+    const subject = document.getElementById('ticketSubject').value;
+    const message = document.getElementById('ticketMessage').value;
+    const priority = document.getElementById('ticketPriority').value;
+    
+    // Ici, vous pouvez ajouter le code pour envoyer les données au serveur
+    console.log('Création du ticket:', { subject, message, priority });
+    
+    // Afficher un message de succès
+    alert('Ticket créé avec succès !');
+    
+    // Fermer la modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('createTicketModal'));
+    modal.hide();
+    
+    // Réinitialiser le formulaire
+    this.reset();
+    
+    // Recharger la page ou mettre à jour l'interface utilisateur
+    // window.location.reload();
+});
+
+// Rafraîchir la liste des messages
+document.getElementById('refreshMessages').addEventListener('click', function() {
+    // Ici, vous pouvez ajouter le code pour rafraîchir les messages
+    console.log('Actualisation des messages...');
+    
+    // Afficher un indicateur de chargement
+    const icon = this.querySelector('i');
+    const originalClass = icon.className;
+    icon.className = 'bi-arrow-clockwise bi-spin';
+    
+    // Simuler un délai de chargement
+    setTimeout(() => {
+        // Restaurer l'icône d'origine
+        icon.className = originalClass;
+        
+        // Afficher un message de succès
+        const toast = new bootstrap.Toast(document.getElementById('refreshToast'));
+        toast.show();
+    }, 1000);
+});
+</script>
+
+<!-- Toast de notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="refreshToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong class="me-auto">Actualisation</strong>
+            <small>À l'instant</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fermer"></button>
+        </div>
+        <div class="toast-body">
+            La liste des messages a été mise à jour.
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% endblock %}
