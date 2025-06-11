@@ -37,7 +37,8 @@ def create_app():
         raise ValueError("WEB_SECRET_KEY n'est pas défini dans le fichier .env")
     
     # Configuration
-    app.config['TEMPLATES_AUTO_RELOAD'] = False
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['TEMPLATE_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
     
     # Initialiser Flask-Login
     login_manager = LoginManager()
