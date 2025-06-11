@@ -73,6 +73,11 @@ def create_app():
     @login_required
     def licenses():
         return render_template('licenses.html')
+        
+    @app.route('/messages')
+    @login_required
+    def messages():
+        return render_template('messages.html')
     
     @app.route('/settings')
     @login_required
