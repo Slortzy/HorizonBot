@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres - Panel de contrôle{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mt-4">Paramètres</h1>
+            <p class="lead">Gérez les paramètres du bot</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Paramètres généraux</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="botToken" class="form-label">Token du bot Discord</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="botToken" value="••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleToken">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Le token est masqué pour des raisons de sécurité</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="prefix" class="form-label">Préfixe des commandes</label>
+                            <input type="text" class="form-control" id="prefix" value="!">
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="autoUpdate" checked>
+                            <label class="form-check-label" for="autoUpdate">Mise à jour automatique</label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Zone dangereuse</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-danger" type="button" id="restartBot">
+                            <i class="bi bi-arrow-clockwise"></i> Redémarrer le bot
+                        </button>
+                        <button class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#shutdownModal">
+                            <i class="bi bi-power"></i> Éteindre le bot
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Statut du bot</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <div class="status-indicator bg-success"></div>
+                        </div>
+                        <div>
+                            <div class="fw-bold">En ligne</div>
+                            <div class="text-muted small">Connecté en tant que NomDuBot#1234</div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-2">
+                        <span class="text-muted">Uptime:</span>
+                        <span class="float-end">12j 6h 45m</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted">Version:</span>
+                        <span class="float-end">1.0.0</span>
+                    </div>
+                    <div>
+                        <span class="text-muted">Dernière mise à jour:</span>
+                        <span class="float-end">2025-06-10</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">À propos</h5>
+                </div>
+                <div class="card-body">
+                    <p>Ce panneau de contrôle permet de gérer votre bot Discord facilement.</p>
+                    <p class="mb-0">Pour toute question, veuillez contacter le support.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation d'extinction -->
+<div class="modal fade" id="shutdownModal" tabindex="-1" aria-labelledby="shutdownModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shutdownModalLabel">Confirmer l'extinction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir éteindre le bot ?</p>
+                <p class="text-danger">Cette action est irréversible. Vous devrez redémarrer le bot manuellement.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmShutdown">Éteindre</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Afficher/masquer le token
+const toggleToken = document.getElementById('toggleToken');
+const botToken = document.getElementById('botToken');
+const tokenIcon = toggleToken.querySelector('i');
+
+let isTokenVisible = false;
+
+toggleToken.addEventListener('click', () => {
+    isTokenVisible = !isTokenVisible;
+    if (isTokenVisible) {
+        botToken.type = 'text';
+        tokenIcon.classList.remove('bi-eye');
+        tokenIcon.classList.add('bi-eye-slash');
+    } else {
+        botToken.type = 'password';
+        tokenIcon.classList.remove('bi-eye-slash');
+        tokenIcon.classList.add('bi-eye');
+    }
+});
+
+// Gestion de l'extinction du bot
+document.getElementById('confirmShutdown').addEventListener('click', () => {
+    // Ici, ajouter le code pour éteindre le bot via l'API
+    fetch('/api/shutdown', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Le bot va s\'éteindre...');
+            // Rediriger vers la page de connexion après 2 secondes
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+        } else {
+            alert('Erreur lors de l\'extinction du bot: ' + (data.error || 'Erreur inconnue'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erreur lors de la communication avec le serveur');
+    });
+    
+    // Fermer la modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('shutdownModal'));
+    modal.hide();
+});
+
+// Gestion du redémarrage du bot
+document.getElementById('restartBot').addEventListener('click', () => {
+    if (confirm('Êtes-vous sûr de vouloir redémarrer le bot ? Cette opération peut prendre quelques secondes.')) {
+        fetch('/api/restart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Le bot redémarre...');
+                // Rafraîchir la page après 3 secondes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                alert('Erreur lors du redémarrage du bot: ' + (data.error || 'Erreur inconnue'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors de la communication avec le serveur');
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
