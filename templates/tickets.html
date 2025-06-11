@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Gestion des Tickets</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newTicketModal">
+                <i class="bi bi-plus-circle"></i> Nouveau Ticket
+            </button>
+        </div>
+    </div>
+
+    <!-- Liste des tickets -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Tickets ouverts</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Utilisateur</th>
+                            <th>Sujet</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsTable">
+                        <!-- Les tickets seront chargés ici par JavaScript -->
+                        <tr>
+                            <td colspan="6" class="text-center">Chargement des tickets...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conteneur pour les messages d'alerte -->
+<div id="alertsContainer" class="container-fluid"></div>
+
+<!-- Modal Nouveau Ticket -->
+<div class="modal fade" id="newTicketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouveau Ticket</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newTicketForm">
+                    <div class="mb-3">
+                        <label for="ticketSubject" class="form-label">Sujet</label>
+                        <input type="text" class="form-control" id="ticketSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticketDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="ticketDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticketUser" class="form-label">Utilisateur (ID Discord)</label>
+                        <input type="text" class="form-control" id="ticketUser" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="createTicketBtn">Créer le ticket</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Voir Ticket -->
+<div class="modal fade" id="viewTicketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Ticket #<span id="ticketId"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6>Sujet: <span id="ticketSubjectView"></span></h6>
+                    <small class="text-muted">Créé par: <span id="ticketUserView"></span> - <span id="ticketDateView"></span></small>
+                </div>
+                <div class="card bg-dark mb-3">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="ticketTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab">Messages</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">Détails</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="ticketTabContent">
+                            <div class="tab-pane fade show active" id="messages" role="tabpanel">
+                                <div id="ticketMessages" class="mb-3" style="height: 200px; overflow-y: auto;">
+                                    <!-- Les messages seront chargés ici -->
+                                </div>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="ticketMessageInput" placeholder="Votre message...">
+                                    <button class="btn btn-primary" type="button" id="sendTicketMessage">Envoyer</button>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="details" role="tabpanel">
+                                <div class="mb-3">
+                                    <label class="form-label">Statut:</label>
+                                    <select class="form-select" id="ticketStatus">
+                                        <option value="open">Ouvert</option>
+                                        <option value="pending">En attente</option>
+                                        <option value="closed">Fermé</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description:</label>
+                                    <textarea class="form-control" id="ticketDescriptionView" rows="4" readonly></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="closeTicketBtn">Fermer le ticket</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Code JavaScript pour gérer les tickets
+$(document).ready(function() {
+    // Fonction utilitaire pour afficher les erreurs
+    function showError(message) {
+        const alert = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        $('#alertsContainer').html(alert);
+    }
+
+    // Fonction utilitaire pour formater la date
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleString('fr-FR');
+    }
+
+    // Charger les tickets depuis l'API
+    async function loadTickets() {
+        try {
+            const response = await fetch('/api/tickets', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur lors du chargement des tickets');
+            }
+            
+            const data = await response.json();
+            const tbody = $('#ticketsTable');
+            tbody.empty();
+
+            if (!data.tickets || data.tickets.length === 0) {
+                tbody.append('<tr><td colspan="6" class="text-center">Aucun ticket trouvé</td></tr>');
+                return;
+            }
+
+            data.tickets.forEach(ticket => {
+                let statusBadge = '';
+                if (ticket.status === 'open') {
+                    statusBadge = '<span class="badge bg-success">Ouvert</span>';
+                } else if (ticket.status === 'pending') {
+                    statusBadge = '<span class="badge bg-warning">En attente</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-secondary">Fermé</span>';
+                }
+
+                const row = `
+                    <tr class="ticket-row" data-id="${ticket.id}">
+                        <td>#${ticket.id}</td>
+                        <td>${ticket.user_id || 'Utilisateur'}</td>
+                        <td>${ticket.subject}</td>
+                        <td>${statusBadge}</td>
+                        <td>${formatDate(ticket.updated_at || ticket.created_at)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary view-ticket" data-id="${ticket.id}">
+                                <i class="bi bi-eye"></i> Voir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        } catch (error) {
+            console.error('Erreur:', error);
+            showError('Erreur lors du chargement des tickets: ' + error.message);
+        }
+    }
+
+    // Initialiser le chargement des tickets
+    loadTickets();
+
+    // Gérer la création d'un nouveau ticket
+    $('#createTicketBtn').click(async function() {
+        const subject = $('#ticketSubject').val();
+        const description = $('#ticketDescription').val();
+        const user = $('#ticketUser').val();
+
+        if (!subject || !description) {
+            showError('Veuillez remplir tous les champs');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/tickets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    subject: subject,
+                    description: description,
+                    user_id: user || null
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Erreur lors de la création du ticket');
+            }
+
+            // Fermer le modal et recharger la liste
+            $('#newTicketModal').modal('hide');
+            await loadTickets();
+            
+            // Réinitialiser le formulaire
+            $('#newTicketForm')[0].reset();
+        } catch (error) {
+            console.error('Erreur:', error);
+            showError(error.message || 'Erreur lors de la création du ticket');
+        }
+    });
+
+    // Charger les détails d'un ticket
+    async function loadTicketDetails(ticketId) {
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur lors du chargement du ticket');
+            }
+            
+            const data = await response.json();
+            const ticket = data.ticket;
+            const messages = data.messages || [];
+            
+            // Mettre à jour les informations du ticket
+            $('#ticketId').text(ticket.id);
+            $('#ticketSubjectView').text(ticket.subject);
+            $('#ticketUserView').text(`Utilisateur #${ticket.user_id}`);
+            $('#ticketDateView').text(formatDate(ticket.created_at));
+            $('#ticketStatus').val(ticket.status);
+            $('#ticketDescriptionView').val(ticket.description);
+            
+            // Afficher les messages
+            const messagesContainer = $('#ticketMessages');
+            messagesContainer.empty();
+            
+            if (messages.length === 0) {
+                messagesContainer.html('<div class="text-muted text-center my-3">Aucun message</div>');
+            } else {
+                messages.forEach(msg => {
+                    const messageDate = formatDate(msg.created_at);
+                    const messageHtml = `
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>${msg.user_id ? `Utilisateur #${msg.user_id}` : 'Système'}</strong>
+                                <small class="text-muted">${messageDate}</small>
+                            </div>
+                            <div class="bg-dark p-2 rounded">
+                                ${msg.content}
+                            </div>
+                        </div>
+                    `;
+                    messagesContainer.append(messageHtml);
+                });
+                
+                // Faire défiler vers le bas
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+            }
+            
+            // Afficher le modal
+            const viewTicketModal = new bootstrap.Modal(document.getElementById('viewTicketModal'));
+            viewTicketModal.show();
+            
+        } catch (error) {
+            console.error('Erreur:', error);
+            showError('Erreur lors du chargement du ticket: ' + error.message);
+        }
+    }
+    
+    // Gérer le clic sur un ticket
+    $(document).on('click', '.view-ticket', function() {
+        const ticketId = $(this).data('id');
+        loadTicketDetails(ticketId);
+    });
+
+    // Envoyer un message dans un ticket
+    async function sendTicketMessage(ticketId, message) {
+        if (!message.trim()) return;
+        
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    content: message
+                })
+            });
+
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Erreur lors de l\'envoi du message');
+            }
+            
+            // Recharger les messages du ticket
+            await loadTicketDetails(ticketId);
+            
+            // Effacer le champ de saisie
+            $('#ticketMessageInput').val('');
+            
+        } catch (error) {
+            console.error('Erreur:', error);
+            showError('Erreur lors de l\'envoi du message: ' + error.message);
+        }
+    }
+    
+    // Gérer l'envoi d'un message dans un ticket
+    $('#sendTicketMessage').click(function() {
+        const ticketId = $('#ticketId').text();
+        const message = $('#ticketMessageInput').val();
+        
+        if (!message.trim()) {
+            showError('Veuillez saisir un message');
+            return;
+        }
+        
+        sendTicketMessage(ticketId, message);
+    });
+
+    // Permettre d'appuyer sur Entrée pour envoyer un message
+    $('#ticketMessageInput').keypress(function(e) {
+        if (e.which === 13) {
+            $('#sendTicketMessage').click();
+            return false;
+        }
+    });
+    
+    // Fermer un ticket
+    async function closeTicket(ticketId) {
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    status: 'closed'
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Erreur lors de la fermeture du ticket');
+            }
+            
+            // Fermer le modal et recharger la liste
+            $('#viewTicketModal').modal('hide');
+            await loadTickets();
+            
+        } catch (error) {
+            console.error('Erreur:', error);
+            showError('Erreur lors de la fermeture du ticket: ' + error.message);
+        }
+    }
+
+    // Gérer la fermeture d'un ticket
+    $('#closeTicketBtn').click(function() {
+        const ticketId = $('#ticketId').text();
+        if (confirm('Êtes-vous sûr de vouloir fermer ce ticket ?')) {
+            closeTicket(ticketId);
+        }
+    });
+});
+</script>
+{% endblock %}

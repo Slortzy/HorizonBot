@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Gestion des Clés de Licence</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#generateKeyModal">
+                <i class="bi bi-key"></i> Générer une clé
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="searchInput" class="form-label">Rechercher</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Utilisateur, clé, email...">
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Statut</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="all">Tous</option>
+                        <option value="active">Actif</option>
+                        <option value="expired">Expiré</option>
+                        <option value="revoked">Révoqué</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFilter" class="form-label">Date</label>
+                    <select class="form-select" id="dateFilter">
+                        <option value="all">Toutes les dates</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois-ci</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-outline-secondary w-100" id="applyFilters">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des clés -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Clés de licence</h5>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download"></i> Exporter
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="#" id="exportCSV">CSV</a></li>
+                    <li><a class="dropdown-item" href="#" id="exportJSON">JSON</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover" id="licensesTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                </div>
+                            </th>
+                            <th>Clé</th>
+                            <th>Utilisateur</th>
+                            <th>Email</th>
+                            <th>Date de création</th>
+                            <th>Expire le</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Les clés seront chargées ici par JavaScript -->
+                        <tr>
+                            <td colspan="8" class="text-center">Chargement des clés de licence...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <nav aria-label="Navigation des pages" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Suivant</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Générer une clé -->
+<div class="modal fade" id="generateKeyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Générer une clé de licence</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="generateKeyForm">
+                    <div class="mb-3">
+                        <label for="userDiscordId" class="form-label">ID Discord</label>
+                        <input type="text" class="form-control" id="userDiscordId" placeholder="123456789012345678" required>
+                        <div class="form-text">L'ID Discord de l'utilisateur (obligatoire)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="userEmail" placeholder="utilisateur@exemple.com">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="keyType" class="form-label">Type de clé</label>
+                            <select class="form-select" id="keyType" required>
+                                <option value="trial">Essai (7 jours)</option>
+                                <option value="monthly">Mensuel</option>
+                                <option value="yearly">Annuel</option>
+                                <option value="lifetime">À vie</option>
+                                <option value="custom">Personnalisé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3" id="customDaysContainer" style="display: none;">
+                            <label for="customDays" class="form-label">Jours de validité</label>
+                            <input type="number" class="form-control" id="customDays" min="1" value="30">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyNote" class="form-label">Notes</label>
+                        <textarea class="form-control" id="keyNote" rows="2" placeholder="Informations supplémentaires..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="generateKeyBtn">
+                    <i class="bi bi-key"></i> Générer la clé
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détails de la clé -->
+<div class="modal fade" id="keyDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Détails de la clé</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <h4 id="licenseKeyDisplay" class="text-primary">XXXX-XXXX-XXXX-XXXX</h4>
+                        <div class="d-flex align-items-center mt-2">
+                            <span class="badge bg-success me-2" id="keyStatusBadge">Actif</span>
+                            <span class="text-muted" id="keyTypeDisplay">Licence Mensuelle</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-outline-secondary btn-sm" id="copyKeyBtn">
+                            <i class="bi bi-clipboard"></i> Copier
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm ms-2" id="revokeKeyBtn">
+                            <i class="bi bi-x-circle"></i> Révoquer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary mb-3">
+                            <div class="card-header">Informations</div>
+                            <div class="card-body">
+                                <dl class="row">
+                                    <dt class="col-sm-5">Créée le</dt>
+                                    <dd class="col-sm-7" id="createdAt">01/01/2023</dd>
+                                    
+                                    <dt class="col-sm-5">Expire le</dt>
+                                    <dd class="col-sm-7" id="expiresAt">31/01/2023</dd>
+                                    
+                                    <dt class="col-sm-5">Utilisée</dt>
+                                    <dd class="col-sm-7" id="usedAt">02/01/2023</dd>
+                                    
+                                    <dt class="col-sm-5">Utilisations</dt>
+                                    <dd class="col-sm-7" id="usageCount">1</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary mb-3">
+                            <div class="card-header">Utilisateur</div>
+                            <div class="card-body">
+                                <dl class="row">
+                                    <dt class="col-sm-5">ID Discord</dt>
+                                    <dd class="col-sm-7" id="userId">1234567890</dd>
+                                    
+                                    <dt class="col-sm-5">Nom d'utilisateur</dt>
+                                    <dd class="col-sm-7" id="userName">Utilisateur#1234</dd>
+                                    
+                                    <dt class="col-sm-5">Email</dt>
+                                    <dd class="col-sm-7" id="userEmail">utilisateur@exemple.com</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header">Notes</div>
+                    <div class="card-body">
+                        <p class="card-text" id="keyNotes">Aucune note.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="saveKeyChanges">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Afficher/masquer le champ de jours personnalisés
+    $('#keyType').change(function() {
+        if ($(this).val() === 'custom') {
+            $('#customDaysContainer').show();
+        } else {
+            $('#customDaysContainer').hide();
+        }
+    });
+
+    // Données factices pour la démo
+    const licenses = [
+        {
+            id: '5X7A-9B2C-4D8E-1F3G',
+            discordId: '123456789012345678',
+            username: 'Utilisateur#1234',
+            email: 'utilisateur@exemple.com',
+            type: 'monthly',
+            status: 'active',
+            createdAt: '2025-05-15',
+            expiresAt: '2025-06-15',
+            usedAt: '2025-05-16',
+            usageCount: 1,
+            notes: 'Clé mensuelle standard'
+        },
+        {
+            id: '8H2K-5M9N-7P1Q-3R4T',
+            discordId: '987654321098765432',
+            username: 'Membre#5678',
+            email: 'membre@exemple.com',
+            type: 'yearly',
+            status: 'active',
+            createdAt: '2025-01-10',
+            expiresAt: '2026-01-10',
+            usedAt: '2025-01-12',
+            usageCount: 1,
+            notes: 'Abonnement annuel'
+        },
+        {
+            id: '2W3E-4R5T-6Y7U-8I9O',
+            discordId: '555666777888999000',
+            username: 'Test#9012',
+            email: 'test@exemple.com',
+            type: 'trial',
+            status: 'expired',
+            createdAt: '2025-05-25',
+            expiresAt: '2025-06-01',
+            usedAt: '2025-05-26',
+            usageCount: 1,
+            notes: 'Période d\'essai de 7 jours'
+        }
+    ];
+
+    // Afficher les licences dans le tableau
+    function displayLicenses() {
+        const tbody = $('#licensesTable tbody');
+        tbody.empty();
+
+        if (licenses.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center">Aucune clé de licence trouvée</td></tr>');
+            return;
+        }
+
+        licenses.forEach(license => {
+            let statusBadge = '';
+            if (license.status === 'active') {
+                statusBadge = '<span class="badge bg-success">Actif</span>';
+            } else if (license.status === 'expired') {
+                statusBadge = '<span class="badge bg-warning">Expiré</span>';
+            } else {
+                statusBadge = '<span class="badge bg-danger">Révoqué</span>';
+            }
+
+            const row = `
+                <tr>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${license.id}">
+                        </div>
+                    </td>
+                    <td><code>${license.id}</code></td>
+                    <td>${license.username}</td>
+                    <td>${license.email || '-'}</td>
+                    <td>${formatDate(license.createdAt)}</td>
+                    <td>${formatDate(license.expiresAt)}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary view-license" data-id="${license.id}">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger revoke-license" data-id="${license.id}">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+    }
+
+    // Formater la date
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('fr-FR', options);
+    }
+
+    // Initialiser l'affichage
+    displayLicenses();
+
+    // Gérer la génération d'une nouvelle clé
+    $('#generateKeyBtn').click(function() {
+        const discordId = $('#userDiscordId').val();
+        const email = $('#userEmail').val();
+        const keyType = $('#keyType').val();
+        const customDays = $('#customDays').val();
+        const notes = $('#keyNote').val();
+
+        if (!discordId) {
+            alert('Veuillez entrer un ID Discord');
+            return;
+        }
+
+        // Ici, vous devriez envoyer les données à votre API
+        console.log('Générer une clé:', { discordId, email, keyType, customDays, notes });
+        
+        // Afficher un message de succès
+        alert('Clé générée avec succès !');
+        
+        // Fermer le modal et réinitialiser le formulaire
+        $('#generateKeyModal').modal('hide');
+        $('#generateKeyForm')[0].reset();
+        
+        // Recharger la liste des clés
+        displayLicenses();
+    });
+
+    // Gérer le clic sur une clé
+    $(document).on('click', '.view-license', function() {
+        const keyId = $(this).data('id');
+        const license = licenses.find(l => l.id === keyId);
+        
+        if (license) {
+            // Mettre à jour le modal avec les données de la licence
+            $('#licenseKeyDisplay').text(license.id);
+            $('#keyStatusBadge')
+                .removeClass('bg-success bg-warning bg-danger')
+                .addClass(license.status === 'active' ? 'bg-success' : (license.status === 'expired' ? 'bg-warning' : 'bg-danger'))
+                .text(license.status === 'active' ? 'Actif' : (license.status === 'expired' ? 'Expiré' : 'Révoqué'));
+            
+            let typeText = '';
+            switch(license.type) {
+                case 'trial': typeText = 'Essai (7 jours)'; break;
+                case 'monthly': typeText = 'Mensuel'; break;
+                case 'yearly': typeText = 'Annuel'; break;
+                case 'lifetime': typeText = 'À vie'; break;
+                default: typeText = 'Personnalisé';
+            }
+            $('#keyTypeDisplay').text(typeText);
+            
+            $('#createdAt').text(formatDate(license.createdAt));
+            $('#expiresAt').text(formatDate(license.expiresAt));
+            $('#usedAt').text(license.usedAt ? formatDate(license.usedAt) : 'Jamais');
+            $('#usageCount').text(license.usageCount);
+            $('#userId').text(license.discordId);
+            $('#userName').text(license.username);
+            $('#userEmail').text(license.email || 'Non fourni');
+            $('#keyNotes').text(license.notes || 'Aucune note.');
+            
+            // Afficher le modal
+            const keyDetailsModal = new bootstrap.Modal(document.getElementById('keyDetailsModal'));
+            keyDetailsModal.show();
+        }
+    });
+
+    // Gérer la révocation d'une clé
+    $(document).on('click', '.revoke-license', function() {
+        const keyId = $(this).data('id');
+        if (confirm(`Êtes-vous sûr de vouloir révoquer la clé ${keyId} ?`)) {
+            // Ici, vous devriez appeler votre API pour révoquer la clé
+            console.log('Révoquer la clé:', keyId);
+            alert('Clé révoquée avec succès');
+            displayLicenses();
+        }
+    });
+
+    // Gérer la copie de la clé
+    $(document).on('click', '#copyKeyBtn', function() {
+        const key = $('#licenseKeyDisplay').text();
+        navigator.clipboard.writeText(key).then(() => {
+            const originalText = $(this).html();
+            $(this).html('<i class="bi bi-check"></i> Copié !');
+            setTimeout(() => {
+                $(this).html(originalText);
+            }, 2000);
+        });
+    });
+
+    // Gérer la sélection/désélection de toutes les cases
+    $('#selectAll').change(function() {
+        $('tbody input[type="checkbox"]').prop('checked', $(this).prop('checked'));
+    });
+
+    // Gérer l'exportation des données
+    $('#exportCSV').click(function(e) {
+        e.preventDefault();
+        alert('Export CSV (fonctionnalité à implémenter)');
+    });
+
+    $('#exportJSON').click(function(e) {
+        e.preventDefault();
+        alert('Export JSON (fonctionnalité à implémenter)');
+    });
+});
+</script>
+{% endblock %}
