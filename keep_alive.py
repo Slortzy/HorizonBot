@@ -1,9 +1,13 @@
 from flask import Flask, send_from_directory
 from threading import Thread
 import os
+import signal
+import sys
+import threading
+import time
 from dotenv import load_dotenv
-import bot
-import web_interface
+from bot import run_bot
+from web_interface import run_web_interface
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -20,20 +24,6 @@ def home():
 def serve_static(path):
     return send_from_directory('static', path)
 
-# Configuration pour le serveur Flask
-class WebServer:
-    def __init__(self):
-        self.app = app
-        self.port = int(os.getenv('WEB_PORT', 8080))
-        self.host = os.getenv('WEB_HOST', '0.0.0.0')
-    
-    def run(self):
-        self.app.run(host=self.host, port=self.port)
-
-def run_web_server():
-    web_server = WebServer()
-    web_server.run()
-
 def signal_handler(sig, frame):
     """Gère les signaux d'arrêt pour un arrêt propre"""
     print("\nArrêt en cours...")
@@ -42,12 +32,22 @@ def signal_handler(sig, frame):
 def run_bot_in_thread():
     """Lance le bot Discord dans un thread séparé"""
     print("Démarrage du bot Discord...")
-    run_bot()
+    try:
+        from bot import run_bot
+        run_bot()
+    except Exception as e:
+        print(f"Erreur lors du démarrage du bot: {e}")
+        sys.exit(1)
 
 def run_web_in_thread():
     """Lance l'interface web dans un thread séparé"""
     print("Démarrage du serveur web...")
-    run_web_interface()
+    try:
+        from web_interface import run_web_interface
+        run_web_interface()
+    except Exception as e:
+        print(f"Erreur lors du démarrage du serveur web: {e}")
+        sys.exit(1)
 
 def main():
     # Configuration des gestionnaires de signaux
@@ -66,9 +66,13 @@ def main():
         # Démarrer l'interface web dans le thread principal
         run_web_in_thread()
         
+    except KeyboardInterrupt:
+        print("\nArrêt demandé par l'utilisateur...")
     except Exception as e:
         print(f"Erreur critique: {e}")
-        sys.exit(1)
+    finally:
+        print("Arrêt du système...")
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
